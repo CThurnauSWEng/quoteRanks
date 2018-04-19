@@ -1,0 +1,13 @@
+
+<a [routerLink]="['/dashboard']">Home</a>
+
+<p>Add a quote by {{ author['name'] }}</p>
+
+<form (submit)="onSubmit()">
+    <!-- use the json pipe to see how newTask changes in real time -->
+    <p> {{ quote | json }} </p>
+    <input type="text" name="quote.content" [(ngModel)]="quote.content" />
+    <p *ngIf="errorsPresent">{{ errorMessage }}</p>
+    <input type="submit" value="Add Quote" />
+</form>
+
