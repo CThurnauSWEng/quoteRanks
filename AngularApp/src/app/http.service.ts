@@ -62,4 +62,10 @@ export class HttpService {
     console.log("url_string: ", url_string);
     return this._http.delete(url_string);
   }
+
+  findAuthorByName(author){
+    console.log("in service findAuthorByName, author: ", author);
+    var url_string = '/authorName/' + author['name'];
+    return this._http.get(url_string);
+  }
 }

@@ -1,13 +1,17 @@
 
 <a [routerLink]="['/dashboard']">Home</a>
 
-<p>Add a quote by {{ author['name'] }}</p>
+<p>Provide a quote by {{ author['name'] }}</p>
 
-<form (submit)="onSubmit()">
-    <!-- use the json pipe to see how newTask changes in real time -->
-    <p> {{ quote | json }} </p>
-    <input type="text" name="quote.content" [(ngModel)]="quote.content" />
-    <p *ngIf="errorsPresent">{{ errorMessage }}</p>
-    <input type="submit" value="Add Quote" />
-</form>
+<div class="formDiv">
+    <form (submit)="onSubmit()">
+        <label>Quote:</label>
+        <input type="text" name="quote.content" [(ngModel)]="quote.content" />
+        <p class="redText" *ngIf="errorsPresent">{{ errorMessage }}</p>
+        <div class="buttonDiv">
+            <button [routerLink]="['/dashboard']" class="blueButton">Cancel</button>
+            <input class="blueButton subButton" type="submit" value="Submit" />
+        </div>
+    </form>
+</div>
 

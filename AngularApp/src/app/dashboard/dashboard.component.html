@@ -1,5 +1,7 @@
 <a [routerLink]="['/add']">Add an Author</a>
 
+<p class="purpletext" >We have quotes by:</p>
+
 <div *ngIf="authorDataAvailable">
   <table>
     <thead>
@@ -10,8 +12,8 @@
     </thead>
     <tbody>
       <tr *ngFor="let author of authors">
-        <td>{{author.name}}</td>
-        <td><button [routerLink]="['/quote',author._id]">View</button><button [routerLink]="['/edit',author._id]">Edit an Author</button></td>
+        <td class="purpletext" >{{author.name}}</td>
+        <td><button [routerLink]="['/quote',author._id]" class="greyButton">View Quotes</button><button [routerLink]="['/edit',author._id]" class="brownButton">Edit</button></td>
       </tr>
     </tbody>
   </table>

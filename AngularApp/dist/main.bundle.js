@@ -20,14 +20,14 @@ webpackEmptyAsyncContext.id = "./src/$$_lazy_route_resource lazy recursive";
 /***/ "./src/app/add/add.component.css":
 /***/ (function(module, exports) {
 
-module.exports = ""
+module.exports = "* {\n    margin: 15px;\n    padding: 0px;\n    font-family: sans-serif;\n}\ntable {\n    border-collapse: collapse;\n}\ntable, th, td{\n    border: 1px solid black;\n    padding: 5px 20px 5px 10px;\n    vertical-align: center;\n}\nth {\n    background-color: rgb(211, 211, 211);\n    color: white;\n    text-align: left;\n}\ntr:nth-child(even) {\n    background-color: rgb(211, 211, 211)\n}\n.purpleText {\n    color: rgb(118, 24, 244);\n}\nh1 {\n    text-align: left;\n}\nbutton {\n    text-align: center;\n    border-radius: 5px;\n    color: white;\n    width: 90px;\n    height: 1.7em;\n    padding: 10px 0px 32px 0px;\n    font-size: 1.1em;\n    margin: 0;\n}\n.greyButton {\n    background-color: rgb(137, 156, 172);\n}\n.brownButton {\n    background-color: rgb(185, 178, 168);\n}\n.blueButton {\n    background-color: rgb(103, 188, 249)\n}\n.mauveButton {\n    background-color: rgb(203, 177, 179);\n}\np {\n    margin-left: 20px;\n}\n.formDiv {\n    padding: 5px;\n    height: auto;\n    width: auto;\n    display: inline-block;\n    vertical-align: top;\n    border: 1px solid black;\n}\nlabel {\n    display: block;\n}\ninput {\n    display: block;\n    font-size: 1.1em;\n    padding-bottom: 10px;\n}\n.subButton {    \n    color: white;\n    padding: 10px 0px 10px 0px;\n    width: 90px;\n    border-radius: 5px; \n    margin-left: 0px 0px 0px 5px;  \n}\n.buttonDiv, .subButton {\n    display: inline-block;\n    vertical-align: top;\n    font-size: 1.1em;\n    font-style: bold;\n    margin: 0px 0px 0px 5px;\n}\n.buttonDiv {\n    margin-left: 20px;\n}\n\n"
 
 /***/ }),
 
 /***/ "./src/app/add/add.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "\n<a [routerLink]=\"['/dashboard']\">Home</a>\n\n<form (submit)=\"onSubmit()\">\n    <!-- use the json pipe to see how newTask changes in real time -->\n    <p> {{ author | json }} </p>\n    <input type=\"text\" name=\"author.name\" [(ngModel)]=\"author.name\" />\n    <p *ngIf=\"errorsPresent\">{{ errorMessage }}</p>\n    <input type=\"submit\" value=\"Add Author\" />\n</form>\n\n"
+module.exports = "\n<a [routerLink]=\"['/dashboard']\">Home</a>\n<p class=\"purpleText\">Add a new quotable author:</p>\n<div class=\"formDiv\">\n    <form (submit)=\"onSubmit()\">\n        <label>Name:</label>\n        <input type=\"text\" name=\"author.name\" [(ngModel)]=\"author.name\" />\n        <p *ngIf=\"errorsPresent\">Error: {{ errorMessage }}</p>\n        <div class=\"buttonDiv\">\n            <button [routerLink]=\"['/dashboard']\" class=\"blueButton\">Cancel</button>\n            <input class=\"blueButton subButton\" type=\"submit\" value=\"Submit\" />\n        </div>\n    </form>\n</div>\n\n"
 
 /***/ }),
 
@@ -60,26 +60,70 @@ var AddComponent = /** @class */ (function () {
     AddComponent.prototype.ngOnInit = function () {
         this.author = { name: "" };
         this.errorMessage = "";
+        this.result = {
+            message: "",
+            errorMessage: ""
+        };
+        console.log("in ngOnInit: result: ", this.result);
     };
     AddComponent.prototype.onSubmit = function () {
         var _this = this;
         console.log("onSubmit: ", this.author);
-        var observable = this._httpService.addAuthor(this.author);
-        observable.subscribe(function (data) {
-            console.log("from add: 1", data);
-            if (data['message'] == "Error") {
-                _this.errorsPresent = true;
-                console.log("data['error']: ", data['error']);
-                console.log("data['error']['errors']['name']['message']: ", data['error']['errors']['name']['message']);
-                _this.errorMessage = data['error']['errors']['name']['message'];
-            }
-            else {
-                _this.errorsPresent = false;
-                _this.errorMessage = "";
-            }
-        });
-        this.author = { name: "" };
-        this._router.navigate(['/dashboard']);
+        console.log("Here a: result before calling validateData: ", this.result);
+        this.validateData();
+        console.log("Result from validateData call: ", this.result);
+        if (this.result['message'] == "Too Short") {
+            console.log("name too short detected");
+            this.errorsPresent = true;
+            this.errorMessage = this.result['errorMessage'];
+            console.log("Here 2: errorMessage: ", this.errorMessage);
+            console.log("here 3: result: ", this.result);
+        }
+        else {
+            var observerable = this._httpService.findAuthorByName(this.author);
+            observerable.subscribe(function (data) {
+                console.log("number of authors found by findAuthorByName service: ", data['data'].length);
+                if (data['data'].length > 0) {
+                    _this.result['message'] = "Duplicate";
+                    _this.result['errorMessage'] = "Author already exists";
+                    console.log("Here 201: result: ", _this.result);
+                    _this.errorsPresent = true;
+                    _this.errorMessage = "Author already exists";
+                }
+                else {
+                    console.log("in add component, result for querying for this author was not success");
+                    _this.result['message'] == "OK";
+                    _this.result['errorMessage'] = "OK to add this Author";
+                    console.log("Here 301: result: ", _this.result);
+                    console.log("no duplicate detected");
+                    var observable = _this._httpService.addAuthor(_this.author);
+                    observable.subscribe(function (data) {
+                        console.log("from add: 1", data);
+                        if (data['message'] == "Error") {
+                            _this.errorsPresent = true;
+                            console.log("data['error']: ", data['error']);
+                            console.log("data['error']['errors']['name']['message']: ", data['error']['errors']['name']['message']);
+                            _this.errorMessage = data['error']['errors']['name']['message'];
+                        }
+                        else {
+                            _this.errorsPresent = false;
+                            _this.errorMessage = "";
+                            _this._router.navigate(['/dashboard']);
+                        }
+                    });
+                }
+            });
+        }
+    };
+    AddComponent.prototype.validateData = function () {
+        this.result['message'] = "In validateData";
+        this.result['errorMessage'] = "Message from validateData";
+        if (this.author['name'].length < 3) {
+            this.result['message'] = "Too Short";
+            this.result['errorMessage'] = "Author name must be at least 3 characters";
+            console.log("Here 101: result: ", this.result);
+            return;
+        }
     };
     AddComponent = __decorate([
         core_1.Component({
@@ -143,14 +187,14 @@ exports.AppRoutingModule = AppRoutingModule;
 /***/ "./src/app/app.component.css":
 /***/ (function(module, exports) {
 
-module.exports = ""
+module.exports = "* {\n    margin: 15px;\n    padding: 0px;\n    font-family: sans-serif;\n}\nh1 {\n    text-align: left;\n}\n"
 
 /***/ }),
 
 /***/ "./src/app/app.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<!--The content below is only a placeholder and can be replaced.-->\n<div style=\"text-align:center\">\n    <h1>\n     Favorite authors\n    </h1>\n  </div>\n  \n  <router-outlet></router-outlet>\n  "
+module.exports = "<!--The content below is only a placeholder and can be replaced.-->\n<div style=\"text-align:center\">\n    <h1>\n     Quote Ranks\n    </h1>\n  </div>\n  \n  <router-outlet></router-outlet>\n  "
 
 /***/ }),
 
@@ -175,7 +219,9 @@ var AppComponent = /** @class */ (function () {
     function AppComponent(_httpService) {
         this._httpService = _httpService;
     }
-    AppComponent.prototype.ngOnInit = function () { };
+    AppComponent.prototype.ngOnInit = function () {
+        console.log("in ngOnInit in quoteRanks app");
+    };
     AppComponent = __decorate([
         core_1.Component({
             selector: 'app-root',
@@ -248,14 +294,14 @@ exports.AppModule = AppModule;
 /***/ "./src/app/dashboard/dashboard.component.css":
 /***/ (function(module, exports) {
 
-module.exports = ""
+module.exports = "* {\n    margin: 15px;\n    padding: 0px;\n    font-family: sans-serif;\n  }\ntable {\n    border-collapse: collapse;\n}\ntable, th, td{\n    border: 1px solid black;\n    padding: 5px 20px 5px 10px;\n    vertical-align: center;\n}\nth {\n    background-color: rgb(211, 211, 211);\n    color: white;\n    text-align: left;\n}\ntr:nth-child(even) {\n    background-color: rgb(211, 211, 211)\n}\n.purpletext {\n    color: rgb(118, 24, 244);\n}\nh1 {\n    text-align: left;\n}\nbutton {\n    text-align: center;\n    border-radius: 5px;\n    color: white;\n    width: 90px;\n    height: 1.7em;\n    padding: 10px 0px 25px 0px;\n    \n}\n.greyButton {\n    background-color: rgb(137, 156, 172);\n}\n.brownButton {\n    background-color: rgb(185, 178, 168);\n}"
 
 /***/ }),
 
 /***/ "./src/app/dashboard/dashboard.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<a [routerLink]=\"['/add']\">Add an Author</a>\n\n<div *ngIf=\"authorDataAvailable\">\n  <table>\n    <thead>\n      <tr>\n        <th>Author</th>\n        <th>Actions available</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr *ngFor=\"let author of authors\">\n        <td>{{author.name}}</td>\n        <td><button [routerLink]=\"['/quote',author._id]\">View</button><button [routerLink]=\"['/edit',author._id]\">Edit an Author</button></td>\n      </tr>\n    </tbody>\n  </table>\n</div>\n\n"
+module.exports = "<a [routerLink]=\"['/add']\">Add an Author</a>\n\n<p class=\"purpletext\" >We have quotes by:</p>\n\n<div *ngIf=\"authorDataAvailable\">\n  <table>\n    <thead>\n      <tr>\n        <th>Author</th>\n        <th>Actions available</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr *ngFor=\"let author of authors\">\n        <td class=\"purpletext\" >{{author.name}}</td>\n        <td><button [routerLink]=\"['/quote',author._id]\" class=\"greyButton\">View Quotes</button><button [routerLink]=\"['/edit',author._id]\" class=\"brownButton\">Edit</button></td>\n      </tr>\n    </tbody>\n  </table>\n</div>\n\n"
 
 /***/ }),
 
@@ -336,14 +382,14 @@ exports.DashboardComponent = DashboardComponent;
 /***/ "./src/app/edit/edit.component.css":
 /***/ (function(module, exports) {
 
-module.exports = ""
+module.exports = "* {\n    margin: 15px;\n    padding: 0px;\n    font-family: sans-serif;\n}\ntable {\n    border-collapse: collapse;\n}\ntable, th, td{\n    border: 1px solid black;\n    padding: 5px 20px 5px 10px;\n    vertical-align: center;\n}\nth {\n    background-color: rgb(211, 211, 211);\n    color: white;\n    text-align: left;\n}\ntr:nth-child(even) {\n    background-color: rgb(211, 211, 211)\n}\n.purpleText {\n    color: rgb(118, 24, 244);\n}\nh1 {\n    text-align: left;\n}\nbutton {\n    text-align: center;\n    border-radius: 5px;\n    color: white;\n    width: 90px;\n    height: 1.7em;\n    padding: 10px 0px 32px 0px;\n    font-size: 1.1em;\n    margin: 0;\n}\n.greyButton {\n    background-color: rgb(137, 156, 172);\n}\n.brownButton {\n    background-color: rgb(185, 178, 168);\n}\n.blueButton {\n    background-color: rgb(103, 188, 249)\n}\n.mauveButton {\n    background-color: rgb(203, 177, 179);\n}\np {\n    margin-left: 20px;\n}\n.formDiv {\n    padding: 5px;\n    height: auto;\n    width: auto;\n    display: inline-block;\n    vertical-align: top;\n    border: 1px solid black;\n}\nlabel {\n    display: block;\n}\ninput {\n    display: block;\n    font-size: 1.1em;\n    padding-bottom: 10px;\n}\n.subButton {    \n    color: white;\n    padding: 10px 0px 10px 0px;\n    width: 90px;\n    border-radius: 5px; \n    margin-left: 0px 0px 0px 5px;  \n}\n.buttonDiv, .subButton {\n    display: inline-block;\n    vertical-align: top;\n    font-size: 1.1em;\n    font-style: bold;\n    margin: 0px 0px 0px 5px;\n}\n.buttonDiv {\n    margin-left: 20px;\n}\n\n"
 
 /***/ }),
 
 /***/ "./src/app/edit/edit.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<a [routerLink]=\"['/dashboard']\">Home</a>\n\n<div *ngIf=\"authorDataAvailable\" id=\"{{author['data'][0]['_id']}}\">\n    <form  (submit)=\"onSubmit($event)\">\n        <!-- use the json pipe to see how newTask changes in real time -->\n        <p> {{ author | json }} </p>\n        <input type=\"text\" name=\"author['data'][0]['name']\" [(ngModel)]=\"author['data'][0]['name']\" />\n        <p *ngIf=\"errorsPresent\">{{ errorMessage }} </p>\n        <button [routerLink]=\"['/dashboard']\">Cancel</button>\n        <input type=\"submit\" value=\"Submit\" />\n    </form>\n</div>\n\n\n"
+module.exports = "<a [routerLink]=\"['/dashboard']\">Home</a>\n<p>Edit this author:</p>\n\n<div class=\"formDiv\" *ngIf=\"authorDataAvailable\" id=\"{{author['data'][0]['_id']}}\">\n    <form  (submit)=\"onSubmit($event)\">\n        <input type=\"text\" name=\"author['data'][0]['name']\" [(ngModel)]=\"author['data'][0]['name']\" />\n        <p *ngIf=\"errorsPresent\">{{ errorMessage }} </p>\n        <div class=\"buttonDiv\">\n                <button [routerLink]=\"['/dashboard']\" class=\"blueButton\">Cancel</button>\n                <input class=\"blueButton subButton\" type=\"submit\" value=\"Submit\" />\n        </div>\n    </form>\n</div>\n\n\n"
 
 /***/ }),
 
@@ -500,6 +546,11 @@ var HttpService = /** @class */ (function () {
         console.log("url_string: ", url_string);
         return this._http.delete(url_string);
     };
+    HttpService.prototype.findAuthorByName = function (author) {
+        console.log("in service findAuthorByName, author: ", author);
+        var url_string = '/authorName/' + author['name'];
+        return this._http.get(url_string);
+    };
     HttpService = __decorate([
         core_1.Injectable(),
         __metadata("design:paramtypes", [http_1.HttpClient])
@@ -514,14 +565,14 @@ exports.HttpService = HttpService;
 /***/ "./src/app/quoteadd/quoteadd.component.css":
 /***/ (function(module, exports) {
 
-module.exports = ""
+module.exports = "* {\n    margin: 15px;\n    padding: 0px;\n    font-family: sans-serif;\n}\ntable {\n    border-collapse: collapse;\n}\ntable, th, td{\n    border: 1px solid black;\n    padding: 5px 20px 5px 10px;\n    vertical-align: center;\n}\nth {\n    background-color: rgb(211, 211, 211);\n    color: white;\n    text-align: left;\n}\ntr:nth-child(even) {\n    background-color: rgb(211, 211, 211)\n}\n.purpleText {\n    color: rgb(118, 24, 244);\n}\n.redText {\n    color: red;\n}\nh1 {\n    text-align: left;\n}\nbutton {\n    text-align: center;\n    border-radius: 5px;\n    color: white;\n    width: 90px;\n    height: 1.7em;\n    padding: 10px 0px 32px 0px;\n    font-size: 1.1em;\n    margin: 0;\n}\n.greyButton {\n    background-color: rgb(137, 156, 172);\n}\n.brownButton {\n    background-color: rgb(185, 178, 168);\n}\n.blueButton {\n    background-color: rgb(103, 188, 249)\n}\n.mauveButton {\n    background-color: rgb(203, 177, 179);\n}\np {\n    margin-left: 20px;\n}\n.formDiv {\n    padding: 5px;\n    height: auto;\n    width: auto;\n    display: inline-block;\n    vertical-align: top;\n    border: 1px solid black;\n}\nlabel {\n    display: block;\n}\ninput {\n    display: block;\n    font-size: 1.1em;\n    padding-bottom: 10px;\n}\n.subButton {    \n    color: white;\n    padding: 10px 0px 10px 0px;\n    width: 90px;\n    border-radius: 5px; \n    margin-left: 0px 0px 0px 5px;  \n}\n.buttonDiv, .subButton {\n    display: inline-block;\n    vertical-align: top;\n    font-size: 1.1em;\n    font-style: bold;\n    margin: 0px 0px 0px 5px;\n}\n.buttonDiv {\n    margin-left: 20px;\n}\n\n"
 
 /***/ }),
 
 /***/ "./src/app/quoteadd/quoteadd.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "\n<a [routerLink]=\"['/dashboard']\">Home</a>\n\n<p>Add a quote by {{ author['name'] }}</p>\n\n<form (submit)=\"onSubmit()\">\n    <!-- use the json pipe to see how newTask changes in real time -->\n    <p> {{ quote | json }} </p>\n    <input type=\"text\" name=\"quote.content\" [(ngModel)]=\"quote.content\" />\n    <p *ngIf=\"errorsPresent\">{{ errorMessage }}</p>\n    <input type=\"submit\" value=\"Add Quote\" />\n</form>\n\n"
+module.exports = "\n<a [routerLink]=\"['/dashboard']\">Home</a>\n\n<p>Provide a quote by {{ author['name'] }}</p>\n\n<div class=\"formDiv\">\n    <form (submit)=\"onSubmit()\">\n        <label>Quote:</label>\n        <input type=\"text\" name=\"quote.content\" [(ngModel)]=\"quote.content\" />\n        <p class=\"redText\" *ngIf=\"errorsPresent\">{{ errorMessage }}</p>\n        <div class=\"buttonDiv\">\n            <button [routerLink]=\"['/dashboard']\" class=\"blueButton\">Cancel</button>\n            <input class=\"blueButton subButton\" type=\"submit\" value=\"Submit\" />\n        </div>\n    </form>\n</div>\n\n"
 
 /***/ }),
 
@@ -617,14 +668,14 @@ exports.QuoteaddComponent = QuoteaddComponent;
 /***/ "./src/app/quoteranks/quoteranks.component.css":
 /***/ (function(module, exports) {
 
-module.exports = ""
+module.exports = "* {\n    margin: 15px;\n    padding: 0px;\n    font-family: sans-serif;\n}\ntable {\n    border-collapse: collapse;\n}\ntable, th, td{\n    border: 1px solid black;\n    padding: 5px 20px 5px 10px;\n    vertical-align: center;\n}\nth {\n    background-color: rgb(211, 211, 211);\n    color: white;\n    text-align: left;\n}\ntr:nth-child(even) {\n    background-color: rgb(211, 211, 211)\n}\n.purpleText {\n    color: rgb(118, 24, 244);\n}\nh1 {\n    text-align: left;\n}\nbutton {\n    text-align: center;\n    border-radius: 5px;\n    color: white;\n    width: 90px;\n    height: 1.7em;\n    padding: 10px 0px 25px 0px;\n    \n}\n.greyButton {\n    background-color: rgb(137, 156, 172);\n}\n.brownButton {\n    background-color: rgb(185, 178, 168);\n}\n.mauveButton {\n    background-color: rgb(203, 177, 179);\n}\np {\n    margin-left: 20px;\n}"
 
 /***/ }),
 
 /***/ "./src/app/quoteranks/quoteranks.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<a [routerLink]=\"['/dashboard']\">Home</a>\n<a [routerLink]=\"['/quoteadd/',authorId]\">Add a Quote</a>\n\n<div *ngIf=\"authorDataAvailable\">\n    <p>Quotes by: {{ author['name'] }}</p>\n    <div *ngIf=\"quoteDataAvailable\">\n        <table>\n            <thead>\n                <tr>\n                    <th>Quote</th>\n                    <th>Votes</th>\n                    <th>Actions available</th>\n                </tr>\n            </thead>\n            <tbody>\n                <tr *ngFor=\"let quote of quotes \">\n                    <td>{{ quote.content }}</td>\n                    <td>{{ quote.votes }}</td>\n                    <td><button (click)=\"upVote(quote._id, authorId)\">Vote Up</button>\n                        <button (click)=\"downVote(quote._id, authorId)\">Vote Down</button>\n                        <button (click)=\"deleteQuote(quote._id)\">Delete</button>\n                    </td>\n                </tr>\n            </tbody>\n        </table>\n    </div>\n\n</div>\n\n\n"
+module.exports = "<a [routerLink]=\"['/dashboard']\">Home</a>\n<a [routerLink]=\"['/quoteadd/',authorId]\">Add a Quote</a>\n\n<div *ngIf=\"authorDataAvailable\">\n    <p class=\"purpleText\" >Quotes by: {{ author['name'] }}</p>\n    <div *ngIf=\"quoteDataAvailable\">\n        <table>\n            <thead>\n                <tr>\n                    <th>Quote</th>\n                    <th>Votes</th>\n                    <th>Actions available</th>\n                </tr>\n            </thead>\n            <tbody>\n                <tr *ngFor=\"let quote of quotes \">\n                    <td class=\"purpleText\">\"{{ quote.content }}\"</td>\n                    <td class=\"purpleText\">{{ quote.votes }}</td>\n                    <td><button class=\"greyButton\" (click)=\"upVote(quote._id, authorId)\">Vote Up</button>\n                        <button class = \"brownButton\" (click)=\"downVote(quote._id, authorId)\">Vote Down</button>\n                        <button class = \"mauveButton\" (click)=\"deleteQuote(quote._id)\">Delete</button>\n                    </td>\n                </tr>\n            </tbody>\n        </table>\n    </div>\n\n</div>\n\n\n"
 
 /***/ }),
 

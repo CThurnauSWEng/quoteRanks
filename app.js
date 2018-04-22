@@ -48,6 +48,18 @@ app.get('/authors/', function(req,res){
         }
     })
 })
+app.get('/authorName/:name', function(req, res){
+    console.log("in server get authorName, name: ", req.params.name);
+    Author.find({name: req.params.name}, function (err, author){
+        if (err){
+            console.log("error retrieving author");
+            res.json({message: "Error", error: err})
+        } else {
+            console.log("Success finding author by name, data: ", author)
+            res.json({message: "Success", data: author})
+        }       
+    })
+})
 
 app.get('/author/:id', function(req, res){
     Author.find({_id: req.params.id})
@@ -160,5 +172,5 @@ app.all("*", (req,res,next) => {
 });
 
 app.listen(8000, function() {
-    console.log("Hello Angular listening on port 8000")
+    console.log("Quote Ranks - listening on port 8000")
 })
